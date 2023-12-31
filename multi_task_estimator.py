@@ -1,23 +1,44 @@
 import torch
 import torch.nn as nn
-
+import torch.nn.functional as F
 
 class MultiTaskEstimator(nn.Module):
-    def __init__(self, num_tasks, user_id_hash_size, user_id_embedding_dim,
-                 user_features_size, item_id_hash_size, item_id_embedding_dim):
+    def __init__(
+        self,
+        num_tasks: int,
+        user_id_hash_size: int,
+        user_id_embedding_dim: int,
+        user_features_size: int, 
+        item_id_hash_size: int,
+        item_id_embedding_dim: int,
+    ) -> None:
+        """
+        params:
+        num_tasks (T): The tasks to compute estimates of
+        user_id_hash_size: the size of the embedding table for users
+        user_id_embedding_dim (DU): internal dimension
+        user_features_size (IU): input feature size for users
+        item_id_hash_size: the size of the embedding table for items
+        item_id_embedding_dim (DI): internal dimension
+        """
         super(MultiTaskEstimator, self).__init__()
 
         # Embedding layers for user and item ids
-        self.user_embedding = nn.Embedding(user_id_hash_size, user_id_embedding_dim)
-        self.item_embedding = nn.Embedding(item_id_hash_size, item_id_embedding_dim)
+        self.user_embedding = nn.Embedding(user_id_hash_size, user_id_embedding_dim)  # noqa
+        self.item_embedding = nn.Embedding(item_id_hash_size, item_id_embedding_dim)  # noqa
 
-        # Linear layer for user features
+        # Linear projection layer for user features
         self.user_features_layer = nn.Linear(user_features_size, user_id_embedding_dim)
 
         # Linear layer for final prediction
-        self.final_layer = nn.Linear(user_id_embedding_dim + item_id_embedding_dim, num_tasks)
+        self.task_arch = nn.Linear(2 * user_id_embedding_dim + item_id_embedding_dim, num_tasks)
 
-    def forward(self, user_id, user_features, item_id):
+    def forward(
+        self, 
+        user_id,  # [B]
+        user_features,  # [B, IU]
+        item_id  # [B]
+    ) -> torch.Tensor:
         # Embedding lookup for user and item ids
         user_embedding = self.user_embedding(user_id)
         item_embedding = self.item_embedding(item_id)
@@ -26,22 +47,36 @@ class MultiTaskEstimator(nn.Module):
         user_features_transformed = self.user_features_layer(user_features)
 
         # Concatenate user embedding, user features, and item embedding
-        combined_features = torch.cat([user_embedding, user_features_transformed, item_embedding], dim=1)
+        combined_features = torch.cat(
+            [
+                user_embedding,
+                user_features_transformed, 
+                item_embedding
+            ],
+            dim=1
+        )
 
         # Final prediction using linear layer
-        output = self.final_layer(combined_features)
+        task_logits = self.task_arch(combined_features)  # [B, T]
 
-        return output
+        return task_logits
 
-    def train_forward(self, user_id, user_features, item_id, labels):
-        # Forward pass
-        predictions = self.forward(user_id, user_features, item_id)
+    def train_forward(
+        self,
+        user_id,
+        user_features,
+        item_id,
+        labels
+    ) -> None:
+        # Get task logits using forward method
+        task_logits = self.forward(user_id, user_features, item_id)
 
-        # Compute cross-entropy loss with logits
-        loss_function = nn.CrossEntropyLoss()
-        loss = loss_function(predictions, labels)
+        # Compute binary cross-entropy loss
+        cross_entropy_loss = F.binary_cross_entropy_with_logits(
+            input=task_logits, target=labels.float(), reduction='sum'
+        )
 
-        return loss
+        return cross_entropy_loss
 
 # Example usage:
 # Replace the placeholder values with your actual data dimensions
@@ -53,8 +88,9 @@ item_id_hash_size = 200
 item_id_embedding_dim = 30
 
 # Instantiate the MultiTaskEstimator
-model = MultiTaskEstimator(num_tasks, user_id_hash_size, user_id_embedding_dim,
-                           user_features_size, item_id_hash_size, item_id_embedding_dim)
+model = MultiTaskEstimator(
+    num_tasks, user_id_hash_size, user_id_embedding_dim,
+    user_features_size, item_id_hash_size, item_id_embedding_dim)
 
 # Example input data
 user_id = torch.tensor([1, 2, 3])  # Replace with your actual user_id data

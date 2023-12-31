@@ -1,3 +1,11 @@
+"""
+Ranking Simulator reads the training data collected by the behavior policy
+It calls the MultiTaskEstimator to compute estimates.
+Based on the estimate it computes the probability that the given item 
+would have been selected at top position. The net reward is computed as
+Sum over data points (prob(top) * reward) / Sum over data points (prob(top))
+"""
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -6,7 +14,7 @@ from typing import List
 from multi_task_estimator import MultiTaskEstimator
 
 
-class TopItemSelector(nn.Module):
+class RankingSimulator(nn.Module):
     def __init__(
         self,
         num_tasks: int,
@@ -17,11 +25,13 @@ class TopItemSelector(nn.Module):
         item_id_embedding_dim: int,
         user_value_weights: List[float]
     ) -> None:
-        super(TopItemSelector, self).__init__()
+        super(RankingSimulator, self).__init__()
 
         # Instantiate the MultiTaskEstimator
-        self.estimator = MultiTaskEstimator(num_tasks, user_id_hash_size, user_id_embedding_dim,
-                                            user_features_size, item_id_hash_size, item_id_embedding_dim)
+        self.estimator = MultiTaskEstimator(
+            num_tasks, user_id_hash_size, user_id_embedding_dim,
+            user_features_size, item_id_hash_size, item_id_embedding_dim
+        )
 
         # User value weights
         self.user_value_weights = nn.Parameter(torch.Tensor(user_value_weights), requires_grad=False)
@@ -53,8 +63,7 @@ item_id_hash_size = 200
 item_id_embedding_dim = 30
 user_value_weights = [0.5, 0.3, 0.2]  # Replace with your actual user_value_weights
 
-# Instantiate the TopItemSelector
-top_selector = TopItemSelector(num_tasks, user_id_hash_size, user_id_embedding_dim,
+ranking_simulator = RankingSimulator(num_tasks, user_id_hash_size, user_id_embedding_dim,
                                user_features_size, item_id_hash_size, item_id_embedding_dim,
                                user_value_weights)
 
@@ -66,5 +75,5 @@ user_features = torch.randn(B, K, user_features_size)  # [B, K, UFS]
 item_id = torch.randint(0, item_id_hash_size, (B, K))  # [B, K]
 
 # Example forward pass
-max_item = top_selector(user_id, user_features, item_id)
+max_item = ranking_simulator(user_id, user_features, item_id)
 print("Max Item:", max_item)
