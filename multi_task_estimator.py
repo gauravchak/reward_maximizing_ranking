@@ -1,6 +1,13 @@
+"""
+This is a specific instance of a final ranker in a recommender system.
+
+"""
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from typing import List
+
 
 class MultiTaskEstimator(nn.Module):
     def __init__(
@@ -11,15 +18,19 @@ class MultiTaskEstimator(nn.Module):
         user_features_size: int, 
         item_id_hash_size: int,
         item_id_embedding_dim: int,
+        user_value_weights: List[float],
     ) -> None:
         """
         params:
-        num_tasks (T): The tasks to compute estimates of
-        user_id_hash_size: the size of the embedding table for users
-        user_id_embedding_dim (DU): internal dimension
-        user_features_size (IU): input feature size for users
-        item_id_hash_size: the size of the embedding table for items
-        item_id_embedding_dim (DI): internal dimension
+            num_tasks (T): The tasks to compute estimates of
+            user_id_hash_size: the size of the embedding table for users
+            user_id_embedding_dim (DU): internal dimension
+            user_features_size (IU): input feature size for users
+            item_id_hash_size: the size of the embedding table for items
+            item_id_embedding_dim (DI): internal dimension
+            user_value_weights: T dimensional weights, such that a linear
+            combination of point-wise immediate rewards is the best predictor
+            of long term user satisfaction.
         """
         super(MultiTaskEstimator, self).__init__()
 
