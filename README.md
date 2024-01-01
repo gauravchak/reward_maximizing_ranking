@@ -6,9 +6,11 @@ As elaborated in [Does your model get better at task T when you rank by estimate
 In this experiment, we seek to train a ranking estimator model to maximize a reward in addition to getting better at prediction accuracy of the binary tasks.
 
 ## Control = Estimator based on accuracy of prediction
-Let $f_{\theta}(x)$ represent the predictions (note predictions not logits) of your model, and $y$ be the true labels. If $f_{\theta}(x)$ and $y$ are T-dimensional vectors, the binary cross-entropy loss for each task can be computed as:
+Let $f_{\theta}(x)$ represent the predictions (note predictions not logits) of your model, and $y$ be the true labels. If $f_{\theta}(x)$ and $y$ are T-dimensional vectors, the binary cross-entropy loss for each task can be computed as
 
-$$L(\theta)_{t} = -\frac{1}{N} \sum_{i=1}^{N} \left[ y_{i,t} \log(f_{\theta}(x_i)_{t}) + (1 - y_{i,t}) \log(1 - f_{\theta}(x_i)_{t}) \right]$$
+$$
+L(\theta)_{t} = -\frac{1}{N} \sum_{i=1}^{N} [ y_{i,t} \log(f_{\theta}(x_i)_{t}) + (1 - y_{i,t}) \log(1 - f_{\theta}(x_i)_{t}) ]
+$$
 
 And summing over all tasks:
 
