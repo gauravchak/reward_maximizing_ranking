@@ -9,14 +9,10 @@ In this experiment, we seek to train a ranking estimator model to maximize a rew
 Let $f_{\theta}(x)$ represent the predictions (note predictions not logits) of your model, and $y$ be the true labels. If $f_{\theta}(x)$ and $y$ are T-dimensional vectors, the binary cross-entropy loss for each task can be computed as
 
 $$
-L(\theta)_{t} = -\frac{1}{N} \sum_{i=1}^{N}
-$$
-
-$$
 L(\theta)_{t} = -\frac{1}{N} \sum_{i=1}^{N} [ y_{i,t} \log(f_{\theta}(x_i)_{t}) + (1 - y_{i,t}) \log(1 - f_{\theta}(x_i)_{t}) ]
 $$
 
-And summing over all tasks:
+And summing the loss over all tasks:
 
 $$L(\theta) = \sum_{t=1}^{T} L(\theta)_{t}$$
 
