@@ -30,7 +30,8 @@ class RankingSimulator(nn.Module):
         # Instantiate the MultiTaskEstimator
         self.estimator = MultiTaskEstimator(
             num_tasks, user_id_hash_size, user_id_embedding_dim,
-            user_features_size, item_id_hash_size, item_id_embedding_dim
+            user_features_size, item_id_hash_size, item_id_embedding_dim,
+            user_value_weights
         )
 
         # User value weights

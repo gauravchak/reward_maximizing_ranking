@@ -98,10 +98,16 @@ user_features_size = 10
 item_id_hash_size = 200
 item_id_embedding_dim = 30
 
+# unused in the above implementation
+user_value_weights = [0.5, 0.3, 0.2]
+
+
 # Instantiate the MultiTaskEstimator
 model = MultiTaskEstimator(
     num_tasks, user_id_hash_size, user_id_embedding_dim,
-    user_features_size, item_id_hash_size, item_id_embedding_dim)
+    user_features_size, item_id_hash_size, item_id_embedding_dim,
+    user_value_weights
+)
 
 # Example input data
 user_id = torch.tensor([1, 2, 3])  # Replace with your actual user_id data
