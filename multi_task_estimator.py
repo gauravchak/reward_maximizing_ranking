@@ -33,16 +33,20 @@ class MultiTaskEstimator(nn.Module):
             of long term user satisfaction.
         """
         super(MultiTaskEstimator, self).__init__()
+        self.user_value_weights = torch.tensor(user_value_weights)  # noqa TODO add device input.
 
         # Embedding layers for user and item ids
-        self.user_embedding = nn.Embedding(user_id_hash_size, user_id_embedding_dim)  # noqa
-        self.item_embedding = nn.Embedding(item_id_hash_size, item_id_embedding_dim)  # noqa
+        self.user_embedding = nn.Embedding(
+            user_id_hash_size, user_id_embedding_dim)
+        self.item_embedding = nn.Embedding(
+            item_id_hash_size, item_id_embedding_dim)
 
         # Linear projection layer for user features
-        self.user_features_layer = nn.Linear(user_features_size, user_id_embedding_dim)
+        self.user_features_layer = nn.Linear(
+            in_features=user_features_size, out_features=user_id_embedding_dim)  # noqa
 
         # Linear layer for final prediction
-        self.task_arch = nn.Linear(2 * user_id_embedding_dim + item_id_embedding_dim, num_tasks)
+        self.task_arch = nn.Linear(2 * user_id_embedding_dim + item_id_embedding_dim, num_tasks)  # noqa
 
     def forward(
         self, 
@@ -67,7 +71,7 @@ class MultiTaskEstimator(nn.Module):
             dim=1
         )
 
-        # Final prediction using linear layer
+        # Compute per-task scores/logits
         task_logits = self.task_arch(combined_features)  # [B, T]
 
         return task_logits
@@ -78,7 +82,8 @@ class MultiTaskEstimator(nn.Module):
         user_features,
         item_id,
         labels
-    ) -> None:
+    ) -> float:
+        """Compute the loss during training"""
         # Get task logits using forward method
         task_logits = self.forward(user_id, user_features, item_id)
 
