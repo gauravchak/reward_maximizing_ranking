@@ -1,46 +1,46 @@
-# reward_maximizing_ranking
-Adding REINFORCE based reward maximization to pointwise ranking
+# Reward Maximizing Ranking for Recommender Systems
 
-As elaborated in [Does your model get better at task T when you rank by estimated probability p(T) ?](https://recsysml.substack.com/p/does-your-model-get-better-at-task) the gradient update from logistic / cross-entropy loss of predicting a task is different than the gradient update of maximizing the reward of the task.
+A PyTorch implementation for training a recommender system ranker to directly optimize for a weighted combination of user rewards, using off-policy policy gradient methods.
 
-In this experiment, we seek to compare two approaches to multi-task scoring
-1. rank with scores that are trained to maximize accuracy of prediction of observed labels
-2. rank with scores that when combined according to prespecified weights leads to maximal reward
+This repository explores moving beyond standard engagement prediction (e.g., clicks) to directly optimize for long-term user value.
 
-## Control = Estimator based on accuracy of prediction
-Let $f_{\theta}(x)$ represent the predictions (note predictions not logits) of your model, and $y$ be the true labels. If $f_{\theta}(x)$ and $y$ are T-dimensional vectors, the binary cross-entropy loss for $t_{th}$ task can be computed as
-$$
-L(\theta)_{t} = -\frac{1}{N} \sum_{i=1}^{N} [ y_{i,t} \log(f_{\theta}(x_i)_{t}) + (1 - y_{i,t}) \log(1 - f_{\theta}(x_i)_{t}) ]
-$$
+For a detailed explanation, please read the accompanying blog post: _[Link to blog post to be added]_
 
-And summing the loss over all tasks:
+## Core Idea
 
-$$L(\theta) = \sum_{t=1}^{T} L(\theta)_{t}$$
+Instead of just predicting the probability of various user interactions (like click, like, share), this model learns a ranking policy `π_θ` that maximizes an expected long-term reward. The reward is defined as a weighted sum of the different interaction probabilities.
 
-## Test = Reward maximization in addition to prediction accuracy
-In test, we will also compute a reward as a function of our model and hence seek to maximize it. UVW are T weights that have been separately found to be optimal linear combination of observed labels.
+The training uses an off-policy approach, learning from data logged by a production policy `π_β`. The loss function combines a standard multi-task prediction loss with a policy gradient loss, adjusted by importance sampling.
 
-$$
-\text{Expected Reward}(\theta) = \sum_{i=1}^{N} \frac{\exp\left(\frac{\langle f_\theta(x_i), UVW \rangle}{\tau}\right) \cdot \langle y_i, UVW \rangle}{\sum_{j=1}^{N} \exp\left(\frac{\langle f_\theta(x_j), UVW \rangle}{\tau}\right)}
-$$
+`Loss = L_BCE + λ * L_PolicyGradient`
 
-Here we have used a Bradley-Terry / Gumbel approach to computing the probability of an item being shown to the user.
+## Models
 
-$$
-P(\text{item at top}) = \frac{\exp\left(\frac{\langle f_\theta(x), UVW \rangle}{\tau}\right)}{\sum_{i=1}^{N} \exp\left(\frac{\langle f_\theta(x_i), UVW \rangle}{\tau}\right)}
-$$
+-   `src/multi_task_estimator.py`: A baseline model that predicts probabilities for multiple tasks using a standard Binary Cross-Entropy loss.
+-   `src/reward_maximizer.py`: An advanced model that uses a combined loss function to directly optimize for the weighted reward, while also being trained on the base prediction tasks. It returns an Off-Policy Estimate (OPE) of the reward for evaluation.
 
-The problem is that while training we only have access to what was logged and people typically log the impressed items and not the items that were considered. 
+## Project Structure
 
-### Options
-1. Learn a float parameter z such that 
-$$
-P(\text{item at top}) = \frac{\exp\left(\frac{\langle f_\theta(x), UVW \rangle}{\tau}\right)}{z}
-$$
+```
+├── src
+│   ├── __init__.py
+│   ├── multi_task_estimator.py
+│   └── reward_maximizer.py
+├── tests
+│   ├── conftest.py
+│   ├── test_multi_task_estimator.py
+│   └── test_reward_maximizer.py
+└── README.md
+```
 
-2. Learn $\tau$ and $z$ as a function of $x_u$.
-$$
-P(\text{item at top}) = \frac{\exp\left(\frac{\langle f_\theta(x), UVW \rangle}{g_\theta(x_u)}\right)}{h_\theta(x_u)}
-$$
+## Getting Started
 
-h and g are in a way learning the scale of the scores of the behavior policy.
+1.  **Install dependencies:**
+    ```bash
+    pip install torch pytest
+    ```
+
+2.  **Run tests:**
+    ```bash
+    pytest
+    ```
