@@ -1,6 +1,6 @@
 import torch
 import torch.nn.functional as F
-
+from typing import List, Tuple
 from .multi_task_estimator import MultiTaskEstimator
 
 
@@ -11,6 +11,29 @@ class RewardMaximizer(MultiTaskEstimator):
     Inference behavior is inherited from MultiTaskEstimator.
     """
 
+    def __init__(
+        self,
+        num_tasks: int,
+        user_id_hash_size: int,
+        user_id_embedding_dim: int,
+        user_features_size: int,
+        item_id_hash_size: int,
+        item_id_embedding_dim: int,
+        user_value_weights: List[float],
+        lambda_pg: float = 1.0,
+    ) -> None:
+        """Initializes the RewardMaximizer."""
+        super().__init__(
+            num_tasks,
+            user_id_hash_size,
+            user_id_embedding_dim,
+            user_features_size,
+            item_id_hash_size,
+            item_id_embedding_dim,
+            user_value_weights,
+        )
+        self.lambda_pg = lambda_pg
+
     def train_forward(
         self,
         user_id: torch.Tensor,
@@ -18,7 +41,7 @@ class RewardMaximizer(MultiTaskEstimator):
         item_id: torch.Tensor,
         labels: torch.Tensor,
         model_scores: torch.Tensor,
-    ) -> torch.Tensor:
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Compute the loss during training using importance sampling.
 
@@ -27,7 +50,12 @@ class RewardMaximizer(MultiTaskEstimator):
             user_features: Tensor of user features.
             item_id: Tensor of item IDs.
             labels: Tensor of labels for each task.
-            model_scores: Tensor of scores from the behavior policy.
+            model_scores: Tensor of scores (probabilities) from the behavior policy.
+
+        Returns:
+            A tuple containing:
+            - loss (torch.Tensor): The training loss.
+            - ope_reward (torch.Tensor): The off-policy estimate of the reward.
         """
         # Get task logits using forward method
         task_logits = self.forward(user_id, user_features, item_id)  # [B, T]
@@ -54,8 +82,18 @@ class RewardMaximizer(MultiTaskEstimator):
             labels.float() * self.user_value_weights, dim=1
         )  # [B]
 
-        # The loss is the negative of the expected reward, estimated with importance sampling.
-        # We take the sum over the batch.
-        loss = -torch.sum(rho * reward)
+        # Policy gradient loss component
+        l_policy_gradient = -torch.sum(rho * reward)
 
-        return loss
+        # BCE loss component, calculated directly to avoid a second forward pass
+        l_bce = F.binary_cross_entropy_with_logits(
+            input=task_logits, target=labels.float(), reduction="sum"
+        )
+
+        # Combined loss
+        loss = l_bce + self.lambda_pg * l_policy_gradient
+
+        # The off-policy estimate of the reward for the batch
+        ope_reward = torch.sum(rho * reward)
+
+        return loss, ope_reward.detach()

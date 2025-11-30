@@ -23,6 +23,7 @@ def test_reward_maximizer():
         item_id_hash_size,
         item_id_embedding_dim,
         user_value_weights,
+        lambda_pg=1.0,
     )
 
     # Example input data
@@ -41,9 +42,13 @@ def test_reward_maximizer():
     assert output.shape == (B, num_tasks)
 
     # Example train_forward pass
-    loss = model.train_forward(
+    loss, ope_reward = model.train_forward(
         user_id, user_features, item_id, labels, model_scores
     )
     print("Training Loss:", loss.item())
+    print("OPE Reward:", ope_reward.item())
     # Loss can be positive or negative
     assert isinstance(loss.item(), float)
+    assert isinstance(ope_reward.item(), float)
+    # Check that ope_reward is detached and has no grad_fn
+    assert ope_reward.grad_fn is None
