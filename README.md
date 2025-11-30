@@ -16,31 +16,17 @@ The training uses an off-policy approach, learning from data logged by a product
 
 ## Models
 
--   `src/multi_task_estimator.py`: A baseline model that predicts probabilities for multiple tasks using a standard Binary Cross-Entropy loss.
--   `src/reward_maximizer.py`: An advanced model that uses a combined loss function to directly optimize for the weighted reward, while also being trained on the base prediction tasks. It returns an Off-Policy Estimate (OPE) of the reward for evaluation.
+- `src/multi_task_estimator.py`: A baseline model that predicts probabilities for multiple tasks using a standard Binary Cross-Entropy loss.
+- `src/reward_maximizer.py`: An advanced model that uses a combined loss function to directly optimize for the weighted reward, while also being trained on the base prediction tasks. It returns an Off-Policy Estimate (OPE) of the reward for evaluation.
 
 ## Project Structure
 
-```
+```md
 ├── src
-│   ├── __init__.py
 │   ├── multi_task_estimator.py
 │   └── reward_maximizer.py
 ├── tests
-│   ├── conftest.py
 │   ├── test_multi_task_estimator.py
 │   └── test_reward_maximizer.py
 └── README.md
 ```
-
-## Getting Started
-
-1.  **Install dependencies:**
-    ```bash
-    pip install torch pytest
-    ```
-
-2.  **Run tests:**
-    ```bash
-    pytest
-    ```
