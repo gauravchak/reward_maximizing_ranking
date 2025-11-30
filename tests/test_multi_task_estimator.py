@@ -38,6 +38,10 @@ def test_multi_task_estimator():
     assert output.shape == (B, num_tasks)
 
     # Example train_forward pass
-    loss = model.train_forward(user_id, user_features, item_id, labels)
+    # model_scores is unused in the base estimator but required for signature consistency
+    model_scores = torch.rand(B, num_tasks)
+    loss = model.train_forward(
+        user_id, user_features, item_id, labels, model_scores
+    )
     print("Training Loss:", loss.item())
     assert loss.item() > 0

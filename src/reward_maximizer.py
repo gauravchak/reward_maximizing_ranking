@@ -5,12 +5,30 @@ from .multi_task_estimator import MultiTaskEstimator
 
 
 class RewardMaximizer(MultiTaskEstimator):
-    """inference is same. Training uses REINFORCE"""
+    """
+    A RewardMaximizer model that uses a PPO-style loss for training.
+
+    Inference behavior is inherited from MultiTaskEstimator.
+    """
 
     def train_forward(
-        self, user_id, user_features, item_id, labels, model_scores
-    ) -> float:
-        """Compute the loss during training"""
+        self,
+        user_id: torch.Tensor,
+        user_features: torch.Tensor,
+        item_id: torch.Tensor,
+        labels: torch.Tensor,
+        model_scores: torch.Tensor,
+    ) -> torch.Tensor:
+        """
+        Compute the loss during training using importance sampling.
+
+        Args:
+            user_id: Tensor of user IDs.
+            user_features: Tensor of user features.
+            item_id: Tensor of item IDs.
+            labels: Tensor of labels for each task.
+            model_scores: Tensor of scores from the behavior policy.
+        """
         # Get task logits using forward method
         task_logits = self.forward(user_id, user_features, item_id)  # [B, T]
 

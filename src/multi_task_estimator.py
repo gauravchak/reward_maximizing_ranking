@@ -1,6 +1,5 @@
 """
 This is a specific instance of a final ranker in a recommender system.
-
 """
 
 import torch
@@ -20,17 +19,16 @@ class MultiTaskEstimator(nn.Module):
         item_id_embedding_dim: int,
         user_value_weights: List[float],
     ) -> None:
-        """
-        params:
-            num_tasks (T): The tasks to compute estimates of
-            user_id_hash_size: the size of the embedding table for users
-            user_id_embedding_dim (DU): internal dimension
-            user_features_size (IU): input feature size for users
-            item_id_hash_size: the size of the embedding table for items
-            item_id_embedding_dim (DI): internal dimension
-            user_value_weights: T dimensional weights, such that a linear
-            combination of point-wise immediate rewards is the best predictor
-            of long term user satisfaction.
+        """Initializes the MultiTaskEstimator.
+
+        Args:
+            num_tasks: The number of tasks to compute estimates for.
+            user_id_hash_size: The size of the embedding table for users.
+            user_id_embedding_dim: The internal dimension for user embeddings.
+            user_features_size: The input feature size for users.
+            item_id_hash_size: The size of the embedding table for items.
+            item_id_embedding_dim: The internal dimension for item embeddings.
+            user_value_weights: T-dimensional weights for combining rewards.
         """
         super(MultiTaskEstimator, self).__init__()
         self.register_buffer(
@@ -57,9 +55,21 @@ class MultiTaskEstimator(nn.Module):
         )  # noqa
 
     def forward(
-        self, user_id, user_features, item_id  # [B]  # [B, IU]  # [B]
+        self,
+        user_id: torch.Tensor,
+        user_features: torch.Tensor,
+        item_id: torch.Tensor,
     ) -> torch.Tensor:
-        # Embedding lookup for user and item ids
+        """Computes the forward pass to get task logits.
+
+        Args:
+            user_id: Tensor of user IDs with shape [B].
+            user_features: Tensor of user features with shape [B, IU].
+            item_id: Tensor of item IDs with shape [B].
+
+        Returns:
+            A tensor of task logits with shape [B, T].
+        """
         user_embedding = self.user_embedding(user_id)
         item_embedding = self.item_embedding(item_id)
 
@@ -76,14 +86,31 @@ class MultiTaskEstimator(nn.Module):
 
         return task_logits
 
-    def train_forward(self, user_id, user_features, item_id, labels) -> float:
-        """Compute the loss during training"""
+    def train_forward(
+        self,
+        user_id: torch.Tensor,
+        user_features: torch.Tensor,
+        item_id: torch.Tensor,
+        labels: torch.Tensor,
+        model_scores: torch.Tensor,
+    ) -> torch.Tensor:
+        """Compute the loss during training.
+
+        Args:
+            user_id: Tensor of user IDs.
+            user_features: Tensor of user features.
+            item_id: Tensor of item IDs.
+            labels: Tensor of labels for each task.
+            model_scores: Optional tensor of scores from a behavior policy.
+                This is unused in the base class but needed for subclasses.
+
+        Returns:
+            The computed loss as a tensor.
+        """
         # Get task logits using forward method
         task_logits = self.forward(user_id, user_features, item_id)
 
         # Compute binary cross-entropy loss
-        cross_entropy_loss = F.binary_cross_entropy_with_logits(
+        return F.binary_cross_entropy_with_logits(
             input=task_logits, target=labels.float(), reduction="sum"
         )
-
-        return cross_entropy_loss
