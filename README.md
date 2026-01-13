@@ -1,5 +1,7 @@
 # Reward Maximizing Ranking for Recommender Systems
 
+[Post](https://recsysml.substack.com/p/stop-predicting-ctr-start-optimizing)
+
 A PyTorch implementation for training a recommender system ranker to directly optimize for a weighted combination of user rewards, using off-policy policy gradient methods.
 
 This repository explores moving beyond standard engagement prediction (e.g., clicks) to directly optimize for long-term user value.
