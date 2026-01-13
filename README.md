@@ -2,7 +2,9 @@
 
 [Post](https://recsysml.substack.com/p/stop-predicting-ctr-start-optimizing)
 
-https://www.youtube.com/watch?v=AhTUqyJr2b8
+[Stop Predicting CTR: Start Optimizing Reward in Recommender Systems](https://www.youtube.com/watch?v=AhTUqyJr2b8 "Stop Predicting CTR: Start Optimizing Reward in Recommender Systems")
+
+
 
 A PyTorch implementation for training a recommender system ranker to directly optimize for a weighted combination of user rewards, using off-policy policy gradient methods.
 
